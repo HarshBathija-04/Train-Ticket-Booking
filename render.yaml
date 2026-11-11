@@ -1,0 +1,28 @@
+# Render Blueprint. The shared PostgreSQL database is created once by hand,
+# so there is no `databases:` block; paste its Internal Database URL into DATABASE_URL.
+services:
+  - type: web
+    name: raildesk-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    region: singapore
+    buildCommand: npm ci --include=dev && npm run build
+    # migrations and the seed are idempotent, so running them on every boot is safe
+    startCommand: npm run migrate && npm run seed && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: DB_SCHEMA
+        value: train_booking
+      - key: DATABASE_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_PASSWORD
+        sync: false
