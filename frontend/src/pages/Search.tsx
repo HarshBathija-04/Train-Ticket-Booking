@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { TrainTrack } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BOOKING_WINDOW_DAYS, SearchForm } from '../components/SearchForm';
+import { SearchForm } from '../components/SearchForm';
 import { TrainCard } from '../components/TrainCard';
 import { EmptyState, ErrorState, Skeleton } from '../components/ui';
 import { api } from '../lib/api';
-import { addDays, formatDate, isoDate } from '../lib/format';
+import { addDays, BOOKING_WINDOW_DAYS, formatDate, isoDate } from '../lib/format';
 import type { Schedule } from '../lib/types';
 
 export default function Search() {
@@ -62,8 +62,8 @@ export default function Search() {
       </nav>
 
       <h1 className="mb-4 text-xl font-extrabold tracking-tight sm:text-2xl">
-        {fromStation?.city} to {toStation?.city}
-        <span className="ml-2 text-base font-semibold text-muted">
+        {fromStation && toStation ? `${fromStation.city} to ${toStation.city}` : 'Search trains'}
+        <span className="block text-base font-semibold text-muted sm:ml-2 sm:inline">
           {formatDate(date, { weekday: 'long', day: 'numeric', month: 'long' })}
         </span>
       </h1>

@@ -5,10 +5,10 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { RouteLine } from '../components/RouteLine';
 import { SeatMap } from '../components/SeatMap';
-import { EmptyState, ErrorState, Skeleton } from '../components/ui';
+import { EmptyState, ErrorState, Field, FieldError, Skeleton } from '../components/ui';
 import { api, ApiError } from '../lib/api';
 import { useAuth } from '../lib/auth';
-import { berthOf, CLASS_NAMES, formatDate, formatINR, GENDERS } from '../lib/format';
+import { berthOf, CLASS_NAMES, formatDate, formatINR, GENDERS, searchUrl } from '../lib/format';
 import type { Booking, ClassCode, Gender, Schedule, SeatMapData } from '../lib/types';
 
 const MAX_PASSENGERS = 6;
@@ -111,10 +111,10 @@ export default function Book() {
     e.preventDefault();
     const errs: Record<string, string> = {};
     drafts.forEach((d) => {
-      if (d.name.trim().length < 2) errs[`${d.seatNo}-name`] = 'Enter the passenger name';
+      if (d.name.trim().length < 2) errs[`${d.seatNo}-name`] = 'Enter the name on their ID';
       const age = Number(d.age);
       if (!Number.isInteger(age) || age < 1 || age > 120) errs[`${d.seatNo}-age`] = 'Age 1 to 120';
-      if (!d.gender) errs[`${d.seatNo}-gender`] = 'Select';
+      if (!d.gender) errs[`${d.seatNo}-gender`] = 'Choose one';
     });
     setErrors(errs);
     if (Object.keys(errs).length) {
@@ -131,7 +131,7 @@ export default function Book() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <Link
-        to={`/search?${new URLSearchParams({ from: s.from.code, to: s.to.code, date: s.journeyDate, fn: s.from.city, tn: s.to.city })}`}
+        to={searchUrl(s.from, s.to, s.journeyDate)}
         className="text-sm font-semibold text-navy-700 underline-offset-4 hover:underline"
       >
         ← Back to results
@@ -199,45 +199,23 @@ export default function Book() {
                         </button>
                       </div>
                       <div className="grid gap-3 sm:grid-cols-[1fr_6rem_8rem]">
-                        <div>
-                          <label className="label" htmlFor={`p-${d.seatNo}-name`}>
-                            Full name
-                          </label>
-                          <input
-                            id={`p-${d.seatNo}-name`}
-                            className="field"
-                            autoComplete="name"
-                            value={d.name}
-                            maxLength={100}
-                            aria-invalid={!!err('name') || undefined}
-                            aria-describedby={err('name') ? `p-${d.seatNo}-name-err` : undefined}
-                            onChange={(e) => update(d.seatNo, { name: e.target.value })}
-                          />
-                          {err('name') && (
-                            <p id={`p-${d.seatNo}-name-err`} className="mt-1 text-xs font-semibold text-stop-700">
-                              {err('name')}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <label className="label" htmlFor={`p-${d.seatNo}-age`}>
-                            Age
-                          </label>
-                          <input
-                            id={`p-${d.seatNo}-age`}
-                            className="field"
-                            inputMode="numeric"
-                            value={d.age}
-                            aria-invalid={!!err('age') || undefined}
-                            aria-describedby={err('age') ? `p-${d.seatNo}-age-err` : undefined}
-                            onChange={(e) => update(d.seatNo, { age: e.target.value.replace(/\D/g, '').slice(0, 3) })}
-                          />
-                          {err('age') && (
-                            <p id={`p-${d.seatNo}-age-err`} className="mt-1 text-xs font-semibold text-stop-700">
-                              {err('age')}
-                            </p>
-                          )}
-                        </div>
+                        <Field
+                          id={`p-${d.seatNo}-name`}
+                          label="Full name"
+                          autoComplete="name"
+                          value={d.name}
+                          maxLength={100}
+                          error={err('name')}
+                          onChange={(e) => update(d.seatNo, { name: e.target.value })}
+                        />
+                        <Field
+                          id={`p-${d.seatNo}-age`}
+                          label="Age"
+                          inputMode="numeric"
+                          value={d.age}
+                          error={err('age')}
+                          onChange={(e) => update(d.seatNo, { age: e.target.value.replace(/\D/g, '').slice(0, 3) })}
+                        />
                         <div>
                           <label className="label" htmlFor={`p-${d.seatNo}-gender`}>
                             Gender
@@ -247,6 +225,7 @@ export default function Book() {
                             className="field"
                             value={d.gender}
                             aria-invalid={!!err('gender') || undefined}
+                            aria-describedby={err('gender') ? `p-${d.seatNo}-gender-err` : undefined}
                             onChange={(e) => update(d.seatNo, { gender: e.target.value as Gender })}
                           >
                             <option value="">Select</option>
@@ -256,6 +235,7 @@ export default function Book() {
                               </option>
                             ))}
                           </select>
+                          <FieldError id={`p-${d.seatNo}-gender`} error={err('gender')} />
                         </div>
                       </div>
                     </li>

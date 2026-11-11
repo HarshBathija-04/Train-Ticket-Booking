@@ -1,6 +1,7 @@
 import { LogOut, Menu, TrainFront, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { toast } from 'sonner';
 import { subscribeSlow } from '../lib/api';
 import { useAuth } from '../lib/auth';
 
@@ -25,7 +26,11 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 export function Layout() {
-  const { user, signOut } = useAuth();
+  const { user, signOut: endSession } = useAuth();
+  const signOut = () => {
+    endSession();
+    toast.success('Signed out. See you on the next journey.');
+  };
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
 

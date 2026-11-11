@@ -1,31 +1,18 @@
 import { Armchair, Ticket, Undo2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SearchForm } from '../components/SearchForm';
-import { addDays, isoDate } from '../lib/format';
+import { addDays, isoDate, searchUrl } from '../lib/format';
 
+const delhi = { code: 'NDLS', city: 'Delhi' };
+const mumbai = { code: 'BCT', city: 'Mumbai' };
 const popular = [
-  { from: ['NDLS', 'New Delhi', 'Delhi'], to: ['BCT', 'Mumbai Central', 'Mumbai'], train: 'Rajdhani', time: '16:30' },
-  {
-    from: ['MAS', 'MGR Chennai Central', 'Chennai'],
-    to: ['SBC', 'KSR Bengaluru City', 'Bengaluru'],
-    train: 'Shatabdi',
-    time: '06:00',
-  },
-  {
-    from: ['NDLS', 'New Delhi', 'Delhi'],
-    to: ['BSB', 'Varanasi Junction', 'Varanasi'],
-    train: 'Vande Bharat',
-    time: '06:00',
-  },
-  {
-    from: ['BCT', 'Mumbai Central', 'Mumbai'],
-    to: ['ADI', 'Ahmedabad Junction', 'Ahmedabad'],
-    train: 'Shatabdi',
-    time: '06:25',
-  },
-  { from: ['NDLS', 'New Delhi', 'Delhi'], to: ['JP', 'Jaipur Junction', 'Jaipur'], train: 'Shatabdi', time: '06:10' },
-  { from: ['CSMT', 'CSMT', 'Mumbai'], to: ['PUNE', 'Pune Junction', 'Pune'], train: 'Deccan Queen', time: '17:10' },
-] as const;
+  { from: delhi, to: mumbai, train: 'Rajdhani', time: '16:30' },
+  { from: { code: 'MAS', city: 'Chennai' }, to: { code: 'SBC', city: 'Bengaluru' }, train: 'Shatabdi', time: '06:00' },
+  { from: delhi, to: { code: 'BSB', city: 'Varanasi' }, train: 'Vande Bharat', time: '06:00' },
+  { from: mumbai, to: { code: 'ADI', city: 'Ahmedabad' }, train: 'Shatabdi', time: '06:25' },
+  { from: delhi, to: { code: 'JP', city: 'Jaipur' }, train: 'Shatabdi', time: '06:10' },
+  { from: { code: 'CSMT', city: 'Mumbai' }, to: { code: 'PUNE', city: 'Pune' }, train: 'Deccan Queen', time: '17:10' },
+];
 
 const perks = [
   {
@@ -81,20 +68,20 @@ export default function Home() {
             </h2>
             <ul className="divide-y divide-white/10">
               {popular.map((p) => (
-                <li key={p.from[0] + p.to[0]}>
+                <li key={p.from.code + p.to.code}>
                   <Link
-                    to={`/search?${new URLSearchParams({ from: p.from[0], to: p.to[0], date: tomorrow, fn: p.from[2], tn: p.to[2] })}`}
+                    to={searchUrl(p.from, p.to, tomorrow)}
                     className="group grid grid-cols-[3.25rem_1fr_auto] items-center gap-3 rounded-md px-2 py-2.5 transition-colors hover:bg-white/8"
                   >
                     <span className="font-mono text-sm font-bold text-marigold-400 tabular">{p.time}</span>
                     <span className="min-w-0">
                       <span className="block truncate font-semibold">
-                        {p.from[2]} → {p.to[2]}
+                        {p.from.city} → {p.to.city}
                       </span>
                       <span className="block truncate text-xs text-white/65">{p.train}</span>
                     </span>
                     <span className="font-mono text-xs text-white/70 group-hover:text-white">
-                      {p.from[0]}–{p.to[0]}
+                      {p.from.code}–{p.to.code}
                     </span>
                   </Link>
                 </li>

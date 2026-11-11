@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { EmptyState, ErrorState, PageTitle, Skeleton, StatusBadge } from '../components/ui';
 import { api } from '../lib/api';
-import { CLASS_NAMES, formatDate, formatINR, formatTime, isoDate } from '../lib/format';
+import { CLASS_NAMES, formatDate, formatINR, formatTime } from '../lib/format';
 import type { Booking } from '../lib/types';
 import { canCancel, useCancelBooking } from './BookingDetail';
 
@@ -15,10 +15,8 @@ export default function MyBookings() {
     queryKey: ['bookings'],
     queryFn: () => api<{ bookings: Booking[] }>('/api/bookings').then((r) => r.bookings),
   });
-  const today = isoDate();
-  const isUpcoming = (b: Booking) => b.bookingStatus === 'CONFIRMED' && b.journeyDate >= today;
   const list = (q.data ?? [])
-    .filter((b) => (tab === 'upcoming' ? isUpcoming(b) : !isUpcoming(b)))
+    .filter((b) => (tab === 'upcoming') === canCancel(b))
     .sort((a, b) => (tab === 'upcoming' ? a.journeyDate.localeCompare(b.journeyDate) : 0));
 
   return (
@@ -35,6 +33,8 @@ export default function MyBookings() {
             key={t}
             role="tab"
             type="button"
+            id={`tab-${t}`}
+            aria-controls="bookings-panel"
             aria-selected={tab === t}
             onClick={() => setTab(t)}
             className={`min-h-10 rounded-sm px-4 text-sm font-semibold transition-colors ${
@@ -46,7 +46,7 @@ export default function MyBookings() {
         ))}
       </div>
 
-      <div role="tabpanel" aria-live="polite">
+      <div role="tabpanel" id="bookings-panel" aria-labelledby={`tab-${tab}`} aria-live="polite">
         {q.isPending ? (
           <div className="space-y-3" aria-busy="true">
             {[0, 1, 2].map((i) => (
@@ -58,7 +58,7 @@ export default function MyBookings() {
         ) : list.length === 0 ? (
           <EmptyState
             icon={Ticket}
-            title={tab === 'upcoming' ? 'No upcoming journeys' : 'Nothing here yet'}
+            title={tab === 'upcoming' ? 'No upcoming journeys' : 'No past or cancelled trips'}
             action={
               <Link to="/" className="btn-primary">
                 Search trains
@@ -66,8 +66,8 @@ export default function MyBookings() {
             }
           >
             {tab === 'upcoming'
-              ? 'Book a train and your ticket will show up here.'
-              : 'Completed and cancelled trips appear here.'}
+              ? 'Search a route, pick your berth and your ticket will appear here.'
+              : 'Once you travel or cancel a booking, it moves here for your records.'}
           </EmptyState>
         ) : (
           <ul className="space-y-3">
@@ -83,7 +83,7 @@ export default function MyBookings() {
                   </p>
                   <p className="text-sm text-muted">
                     {formatDate(b.journeyDate)} · {formatTime(b.departureTime)} · {b.trainName} ·{' '}
-                    {CLASS_NAMES[b.classCode]} · {b.noOfSeats} pax
+                    {CLASS_NAMES[b.classCode]} · {b.noOfSeats} passenger{b.noOfSeats > 1 && 's'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 sm:flex-col sm:items-end">
@@ -94,7 +94,7 @@ export default function MyBookings() {
                         type="button"
                         className="btn-danger min-h-10"
                         disabled={cancel.isPending}
-                        onClick={() => window.confirm(`Cancel PNR ${b.pnr}?`) && cancel.mutate(b.pnr)}
+                        onClick={() => cancel.confirmAndCancel(b.pnr)}
                         aria-label={`Cancel booking ${b.pnr}`}
                       >
                         Cancel

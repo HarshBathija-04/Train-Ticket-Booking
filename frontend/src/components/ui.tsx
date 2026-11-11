@@ -1,5 +1,5 @@
 import { AlertTriangle, type LucideIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { InputHTMLAttributes, ReactNode } from 'react';
 import { ApiError } from '../lib/api';
 import type { Booking } from '../lib/types';
 
@@ -57,6 +57,38 @@ export function StatusBadge({ status }: { status: Booking['bookingStatus'] }) {
       <span className={`size-1.5 rounded-full ${ok ? 'bg-go-700' : 'bg-stop-700'}`} aria-hidden="true" />
       {ok ? 'Confirmed' : 'Cancelled'}
     </span>
+  );
+}
+
+export function FieldError({ id, error }: { id: string; error?: string }) {
+  return error ? (
+    <p id={`${id}-err`} className="mt-1 text-xs font-semibold text-stop-700">
+      {error}
+    </p>
+  ) : null;
+}
+
+/** Labelled text input with an inline error wired up via aria-describedby. */
+export function Field({
+  id,
+  label,
+  error,
+  ...props
+}: { id: string; label: string; error?: string } & InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <div>
+      <label htmlFor={id} className="label">
+        {label}
+      </label>
+      <input
+        id={id}
+        className="field"
+        aria-invalid={!!error || undefined}
+        aria-describedby={error ? `${id}-err` : undefined}
+        {...props}
+      />
+      <FieldError id={id} error={error} />
+    </div>
   );
 }
 

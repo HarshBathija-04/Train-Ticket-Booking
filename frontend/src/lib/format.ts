@@ -1,4 +1,4 @@
-import type { ClassCode } from './types';
+import type { ClassCode, Station } from './types';
 
 export const CLASS_NAMES: Record<ClassCode, string> = {
   '1A': 'First AC',
@@ -41,6 +41,13 @@ export function addDays(iso: string, days: number) {
   const d = new Date(`${iso}T00:00:00`);
   d.setDate(d.getDate() + days);
   return isoDate(d);
+}
+
+export const BOOKING_WINDOW_DAYS = 60;
+
+/** Results URL; city names ride along so the search form can show them without a lookup. */
+export function searchUrl(from: Pick<Station, 'code' | 'city'>, to: Pick<Station, 'code' | 'city'>, date: string) {
+  return `/search?${new URLSearchParams({ from: from.code, to: to.code, date, fn: from.city, tn: to.city })}`;
 }
 
 /** Coach layout per class: seats per bay/row, where the aisle falls, berth names. */

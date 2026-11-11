@@ -1,7 +1,7 @@
 import { ArrowLeftRight, Search } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addDays, isoDate } from '../lib/format';
+import { addDays, BOOKING_WINDOW_DAYS, isoDate, searchUrl } from '../lib/format';
 import type { Station } from '../lib/types';
 import { StationInput } from './StationInput';
 
@@ -11,8 +11,6 @@ interface Props {
   initialDate?: string;
   compact?: boolean;
 }
-
-export const BOOKING_WINDOW_DAYS = 60;
 
 export function SearchForm({ initialFrom = null, initialTo = null, initialDate, compact }: Props) {
   const navigate = useNavigate();
@@ -27,8 +25,7 @@ export function SearchForm({ initialFrom = null, initialTo = null, initialDate, 
     if (!from || !to) return setError('Choose both stations from the suggestions.');
     if (from.code === to.code) return setError('Origin and destination must be different.');
     setError('');
-    const q = new URLSearchParams({ from: from.code, to: to.code, date, fn: from.city, tn: to.city });
-    navigate(`/search?${q}`);
+    navigate(searchUrl(from, to, date));
   };
 
   return (

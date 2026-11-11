@@ -9,9 +9,10 @@ import { api, ApiError } from '../lib/api';
 import { berthOf, CLASS_NAMES, formatDate, formatINR, GENDERS, isoDate } from '../lib/format';
 import type { Booking } from '../lib/types';
 
+/** Cancel mutation plus `confirmAndCancel`, which asks first so both screens word it the same. */
 export function useCancelBooking() {
   const qc = useQueryClient();
-  return useMutation({
+  const m = useMutation({
     mutationFn: (pnr: string) => api<{ booking: Booking }>(`/api/bookings/${pnr}/cancel`, { method: 'POST' }),
     onSuccess: ({ booking }) => {
       qc.setQueryData(['booking', booking.pnr], booking);
@@ -19,8 +20,12 @@ export function useCancelBooking() {
       qc.invalidateQueries({ queryKey: ['search'] });
       toast.success(`PNR ${booking.pnr} cancelled. Seats released.`);
     },
-    onError: (err) => toast.error(err instanceof ApiError ? err.message : 'Cancellation failed'),
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : 'Cancellation failed, please try again'),
   });
+  const confirmAndCancel = (pnr: string) =>
+    window.confirm(`Cancel PNR ${pnr}? All seats on this ticket go back on sale. This can't be undone.`) &&
+    m.mutate(pnr);
+  return { ...m, confirmAndCancel };
 }
 
 export const canCancel = (b: Booking) => b.bookingStatus === 'CONFIRMED' && b.journeyDate >= isoDate();
@@ -175,7 +180,7 @@ export default function BookingDetail() {
             type="button"
             className="btn-danger sm:ml-auto"
             disabled={cancel.isPending}
-            onClick={() => window.confirm(`Cancel PNR ${b.pnr}? This releases all seats.`) && cancel.mutate(b.pnr)}
+            onClick={() => cancel.confirmAndCancel(b.pnr)}
           >
             {cancel.isPending ? 'Cancelling…' : 'Cancel booking'}
           </button>

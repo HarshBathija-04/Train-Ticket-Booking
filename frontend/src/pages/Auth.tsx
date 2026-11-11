@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Field } from '../components/ui';
 import { api, ApiError } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import type { User } from '../lib/types';
@@ -38,30 +39,16 @@ export default function AuthPage({ mode }: { mode: Mode }) {
     setFieldErrors({});
     m.mutate(mode === 'login' ? { email: form.email, password: form.password } : form);
   };
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
-
   const field = (k: keyof typeof form, label: string, props: React.InputHTMLAttributes<HTMLInputElement>) => (
-    <div>
-      <label htmlFor={k} className="label">
-        {label}
-      </label>
-      <input
-        id={k}
-        name={k}
-        className="field"
-        value={form[k]}
-        onChange={set(k)}
-        aria-invalid={!!fieldErrors[k] || undefined}
-        aria-describedby={fieldErrors[k] ? `${k}-err` : undefined}
-        {...props}
-      />
-      {fieldErrors[k] && (
-        <p id={`${k}-err`} className="mt-1 text-xs font-semibold text-stop-700">
-          {fieldErrors[k]}
-        </p>
-      )}
-    </div>
+    <Field
+      id={k}
+      name={k}
+      label={label}
+      value={form[k]}
+      error={fieldErrors[k]}
+      onChange={(e) => setForm((f) => ({ ...f, [k]: e.target.value }))}
+      {...props}
+    />
   );
 
   const formError = m.error && !(m.error instanceof ApiError && m.error.details) ? m.error : null;
@@ -108,7 +95,13 @@ export default function AuthPage({ mode }: { mode: Mode }) {
             </p>
           )}
           <button type="submit" className="btn-primary w-full" disabled={m.isPending}>
-            {m.isPending ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
+            {m.isPending
+              ? mode === 'login'
+                ? 'Signing in…'
+                : 'Creating account…'
+              : mode === 'login'
+                ? 'Sign in'
+                : 'Create account'}
           </button>
         </form>
 
