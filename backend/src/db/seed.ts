@@ -215,7 +215,7 @@ async function upsertUser(name: string, email: string, password: string, role: '
   const hash = await bcrypt.hash(password, 10);
   const { rows } = await pool.query<{ id: number }>(
     `INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4)
-     ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role RETURNING id`,
+     ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, password_hash = EXCLUDED.password_hash RETURNING id`,
     [name, email, hash, role],
   );
   return rows[0].id;
