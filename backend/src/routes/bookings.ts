@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { pool, withTransaction } from '../db/pool.js';
 import { todayIST } from '../lib/dates.js';
 import { HttpError } from '../lib/errors.js';
-import { assignSeats, generatePnr, SeatError } from '../lib/seats.js';
+import { assignSeats, generatePnr } from '../lib/seats.js';
 import { requireAuth } from '../middleware/auth.js';
 
 export const bookingsRouter = Router();
@@ -40,7 +40,7 @@ const bookingSelect = `
   JOIN stations src ON src.code = t.source
   JOIN stations dst ON dst.code = t.destination`;
 
-export async function getBooking(db: pg.Pool | pg.PoolClient, pnr: string) {
+async function getBooking(db: pg.Pool | pg.PoolClient, pnr: string) {
   const { rows } = await db.query(`${bookingSelect} WHERE b.pnr = $1`, [pnr]);
   return rows[0];
 }
@@ -70,17 +70,11 @@ export async function createBooking(userId: number, input: z.infer<typeof create
       'SELECT seat_no FROM passengers WHERE schedule_class_id = $1 AND NOT cancelled',
       [inv.id],
     );
-    let seats: number[];
-    try {
-      seats = assignSeats(
-        input.passengers.map((p) => p.seatNo),
-        inv.total_seats,
-        booked.rows.map((r) => r.seat_no),
-      );
-    } catch (err) {
-      if (err instanceof SeatError) throw new HttpError(409, err.code, err.message);
-      throw err;
-    }
+    const seats = assignSeats(
+      input.passengers.map((p) => p.seatNo),
+      inv.total_seats,
+      booked.rows.map((r) => r.seat_no),
+    );
     await c.query('UPDATE schedule_classes SET available_seats = available_seats - $2 WHERE id = $1', [inv.id, n]);
     const pnr = generatePnr();
     const b = await c.query<{ booking_id: number }>(

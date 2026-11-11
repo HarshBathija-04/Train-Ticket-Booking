@@ -1,13 +1,7 @@
 import { randomInt } from 'node:crypto';
+import { HttpError } from './errors.js';
 
-export class SeatError extends Error {
-  constructor(
-    public code: 'SEAT_TAKEN' | 'SEAT_INVALID' | 'NOT_ENOUGH_SEATS',
-    message: string,
-  ) {
-    super(message);
-  }
-}
+const conflict = (code: string, message: string) => new HttpError(409, code, message);
 
 /**
  * Resolve the seat for every passenger: requested seats must be valid and free,
@@ -16,17 +10,17 @@ export class SeatError extends Error {
 export function assignSeats(requested: (number | undefined)[], totalSeats: number, booked: Iterable<number>): number[] {
   const taken = new Set(booked);
   const chosen = requested.filter((s): s is number => s !== undefined);
-  if (new Set(chosen).size !== chosen.length) throw new SeatError('SEAT_INVALID', 'The same seat was selected twice');
+  if (new Set(chosen).size !== chosen.length) throw conflict('SEAT_INVALID', 'The same seat was selected twice');
   for (const seat of chosen) {
-    if (seat < 1 || seat > totalSeats) throw new SeatError('SEAT_INVALID', `Seat ${seat} does not exist`);
-    if (taken.has(seat)) throw new SeatError('SEAT_TAKEN', `Seat ${seat} was just booked by someone else`);
+    if (seat < 1 || seat > totalSeats) throw conflict('SEAT_INVALID', `Seat ${seat} does not exist`);
+    if (taken.has(seat)) throw conflict('SEAT_TAKEN', `Seat ${seat} was just booked by someone else`);
     taken.add(seat);
   }
   let next = 1;
   return requested.map((seat) => {
     if (seat !== undefined) return seat;
     while (taken.has(next)) next++;
-    if (next > totalSeats) throw new SeatError('NOT_ENOUGH_SEATS', 'Not enough seats left in this class');
+    if (next > totalSeats) throw conflict('NOT_ENOUGH_SEATS', 'Not enough seats left in this class');
     taken.add(next);
     return next;
   });

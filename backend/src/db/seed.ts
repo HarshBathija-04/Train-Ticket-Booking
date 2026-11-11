@@ -35,133 +35,24 @@ const SEATS = { '1A': 18, '2A': 46, '3A': 64, SL: 72, CC: 78, EC: 56 } as const;
 type Cls = keyof typeof SEATS;
 type TrainRow = [string, string, string, string, string, string, string, number, Partial<Record<Cls, number>>];
 
+// prettier-ignore
 const trains: TrainRow[] = [
   // the three trains from the original MySQL dump
   ['12001', 'Bhopal Shatabdi', 'Shatabdi', 'NDLS', 'BPL', '06:00', '14:25', 505, { EC: 2390, CC: 1185 }],
-  [
-    '12952',
-    'Mumbai Rajdhani',
-    'Rajdhani',
-    'NDLS',
-    'BCT',
-    '16:30',
-    '08:35',
-    965,
-    { '1A': 4755, '2A': 2860, '3A': 2045 },
-  ],
-  [
-    '12229',
-    'Lucknow Mail',
-    'Superfast',
-    'LKO',
-    'NDLS',
-    '22:00',
-    '06:45',
-    525,
-    { '1A': 2210, '2A': 1340, '3A': 965, SL: 380 },
-  ],
+  ['12952', 'Mumbai Rajdhani', 'Rajdhani', 'NDLS', 'BCT', '16:30', '08:35', 965, { '1A': 4755, '2A': 2860, '3A': 2045 }],
+  ['12229', 'Lucknow Mail', 'Superfast', 'LKO', 'NDLS', '22:00', '06:45', 525, { '1A': 2210, '2A': 1340, '3A': 965, SL: 380 }],
   ['12002', 'Bhopal Shatabdi', 'Shatabdi', 'BPL', 'NDLS', '15:15', '23:40', 505, { EC: 2390, CC: 1185 }],
-  [
-    '12156',
-    'Bhopal Express',
-    'Superfast',
-    'NDLS',
-    'BPL',
-    '20:50',
-    '07:25',
-    635,
-    { '1A': 2510, '2A': 1520, '3A': 1080, SL: 420 },
-  ],
-  [
-    '12951',
-    'Mumbai Rajdhani',
-    'Rajdhani',
-    'BCT',
-    'NDLS',
-    '17:00',
-    '08:32',
-    932,
-    { '1A': 4755, '2A': 2860, '3A': 2045 },
-  ],
-  [
-    '12904',
-    'Golden Temple Mail',
-    'Mail/Express',
-    'NDLS',
-    'BCT',
-    '07:55',
-    '07:00',
-    1385,
-    { '1A': 3620, '2A': 2190, '3A': 1545, SL: 595 },
-  ],
-  [
-    '12230',
-    'Lucknow Mail',
-    'Superfast',
-    'NDLS',
-    'LKO',
-    '22:00',
-    '06:40',
-    520,
-    { '1A': 2210, '2A': 1340, '3A': 965, SL: 380 },
-  ],
-  [
-    '12301',
-    'Howrah Rajdhani',
-    'Rajdhani',
-    'HWH',
-    'NDLS',
-    '16:50',
-    '10:00',
-    1030,
-    { '1A': 4950, '2A': 2955, '3A': 2110 },
-  ],
-  [
-    '12302',
-    'Howrah Rajdhani',
-    'Rajdhani',
-    'NDLS',
-    'HWH',
-    '16:55',
-    '09:55',
-    1020,
-    { '1A': 4950, '2A': 2955, '3A': 2110 },
-  ],
-  [
-    '12627',
-    'Karnataka Express',
-    'Superfast',
-    'SBC',
-    'NDLS',
-    '19:20',
-    '09:00',
-    2260,
-    { '2A': 3420, '3A': 2340, SL: 870 },
-  ],
-  [
-    '12628',
-    'Karnataka Express',
-    'Superfast',
-    'NDLS',
-    'SBC',
-    '20:20',
-    '06:40',
-    2060,
-    { '2A': 3420, '3A': 2340, SL: 870 },
-  ],
+  ['12156', 'Bhopal Express', 'Superfast', 'NDLS', 'BPL', '20:50', '07:25', 635, { '1A': 2510, '2A': 1520, '3A': 1080, SL: 420 }],
+  ['12951', 'Mumbai Rajdhani', 'Rajdhani', 'BCT', 'NDLS', '17:00', '08:32', 932, { '1A': 4755, '2A': 2860, '3A': 2045 }],
+  ['12904', 'Golden Temple Mail', 'Mail/Express', 'NDLS', 'BCT', '07:55', '07:00', 1385, { '1A': 3620, '2A': 2190, '3A': 1545, SL: 595 }],
+  ['12230', 'Lucknow Mail', 'Superfast', 'NDLS', 'LKO', '22:00', '06:40', 520, { '1A': 2210, '2A': 1340, '3A': 965, SL: 380 }],
+  ['12301', 'Howrah Rajdhani', 'Rajdhani', 'HWH', 'NDLS', '16:50', '10:00', 1030, { '1A': 4950, '2A': 2955, '3A': 2110 }],
+  ['12302', 'Howrah Rajdhani', 'Rajdhani', 'NDLS', 'HWH', '16:55', '09:55', 1020, { '1A': 4950, '2A': 2955, '3A': 2110 }],
+  ['12627', 'Karnataka Express', 'Superfast', 'SBC', 'NDLS', '19:20', '09:00', 2260, { '2A': 3420, '3A': 2340, SL: 870 }],
+  ['12628', 'Karnataka Express', 'Superfast', 'NDLS', 'SBC', '20:20', '06:40', 2060, { '2A': 3420, '3A': 2340, SL: 870 }],
   ['12007', 'Mysuru Shatabdi', 'Shatabdi', 'MAS', 'SBC', '06:00', '10:55', 295, { EC: 1595, CC: 790 }],
   ['12008', 'Chennai Shatabdi', 'Shatabdi', 'SBC', 'MAS', '16:30', '21:25', 295, { EC: 1595, CC: 790 }],
-  [
-    '12723',
-    'Telangana Express',
-    'Superfast',
-    'SC',
-    'NDLS',
-    '06:00',
-    '07:40',
-    1540,
-    { '2A': 2750, '3A': 1900, SL: 715 },
-  ],
+  ['12723', 'Telangana Express', 'Superfast', 'SC', 'NDLS', '06:00', '07:40', 1540, { '2A': 2750, '3A': 1900, SL: 715 }],
   ['12015', 'Ajmer Shatabdi', 'Shatabdi', 'NDLS', 'JP', '06:10', '10:40', 270, { EC: 1700, CC: 845 }],
   ['12016', 'Ajmer Shatabdi', 'Shatabdi', 'JP', 'NDLS', '17:50', '22:40', 290, { EC: 1700, CC: 845 }],
   ['12009', 'Ahmedabad Shatabdi', 'Shatabdi', 'BCT', 'ADI', '06:25', '12:45', 380, { EC: 1925, CC: 965 }],
@@ -173,40 +64,10 @@ const trains: TrainRow[] = [
   ['22435', 'Vande Bharat Express', 'Vande Bharat', 'NDLS', 'BSB', '06:00', '14:00', 480, { EC: 3355, CC: 1805 }],
   ['22436', 'Vande Bharat Express', 'Vande Bharat', 'BSB', 'NDLS', '15:00', '23:00', 480, { EC: 3355, CC: 1805 }],
   ['12050', 'Gatimaan Express', 'Gatimaan', 'NDLS', 'AGC', '08:10', '09:50', 100, { EC: 1545, CC: 790 }],
-  [
-    '12235',
-    'Guwahati Rajdhani',
-    'Rajdhani',
-    'NDLS',
-    'GHY',
-    '16:20',
-    '19:05',
-    1605,
-    { '1A': 6050, '2A': 3550, '3A': 2510 },
-  ],
+  ['12235', 'Guwahati Rajdhani', 'Rajdhani', 'NDLS', 'GHY', '16:20', '19:05', 1605, { '1A': 6050, '2A': 3550, '3A': 2510 }],
   ['12625', 'Kerala Express', 'Superfast', 'TVC', 'NDLS', '11:15', '13:25', 3010, { '2A': 4150, '3A': 2875, SL: 1080 }],
-  [
-    '12309',
-    'Patna Rajdhani',
-    'Rajdhani',
-    'PNBE',
-    'NDLS',
-    '19:10',
-    '07:40',
-    750,
-    { '1A': 3880, '2A': 2315, '3A': 1645 },
-  ],
-  [
-    '12841',
-    'Coromandel Express',
-    'Superfast',
-    'HWH',
-    'MAS',
-    '15:20',
-    '17:00',
-    1540,
-    { '2A': 2650, '3A': 1820, SL: 690 },
-  ],
+  ['12309', 'Patna Rajdhani', 'Rajdhani', 'PNBE', 'NDLS', '19:10', '07:40', 750, { '1A': 3880, '2A': 2315, '3A': 1645 }],
+  ['12841', 'Coromandel Express', 'Superfast', 'HWH', 'MAS', '15:20', '17:00', 1540, { '2A': 2650, '3A': 1820, SL: 690 }],
 ];
 
 const travellers = ['Priya Nair', 'Rohan Mehta', 'Ishita Banerjee', 'Kabir Singh', 'Ananya Iyer', 'Vikram Rao'];
@@ -242,23 +103,11 @@ export async function seed() {
     );
   }
   for (const [num, name, type, src, dst, dep, arr, dur, classes] of trains) {
-    await pool.query(`INSERT INTO trains VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT DO NOTHING`, [
-      num,
-      name,
-      type,
-      src,
-      dst,
-      dep,
-      arr,
-      dur,
-    ]);
+    const train = [num, name, type, src, dst, dep, arr, dur];
+    await pool.query('INSERT INTO trains VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT DO NOTHING', train);
     for (const [code, fare] of Object.entries(classes)) {
-      await pool.query('INSERT INTO train_classes VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING', [
-        num,
-        code,
-        fare,
-        SEATS[code as Cls],
-      ]);
+      const row = [num, code, fare, SEATS[code as Cls]];
+      await pool.query('INSERT INTO train_classes VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING', row);
     }
   }
 
@@ -266,6 +115,12 @@ export async function seed() {
   if (config.adminPassword) await upsertUser('RailDesk Admin', 'admin@raildesk.dev', config.adminPassword, 'ADMIN');
 
   const today = todayIST();
+  const book = (userId: number, train: string, cls: Cls, day: number, names: string[]) =>
+    scheduleId(train, addDays(today, day)).then((id) =>
+      createBooking(userId, { scheduleId: id, classCode: cls, passengers: pax(names) }),
+    );
+  const demoTrip = () => book(demoId, '12952', '3A', 5, ['Aarav Sharma', 'Meera Sharma']);
+
   const { rows } = await pool.query('SELECT count(*)::int AS n FROM bookings');
   if (rows[0].n > 0) {
     // long-running demo: seeded trips drift into the past, so keep one upcoming trip for the demo account
@@ -277,11 +132,7 @@ export async function seed() {
       [demoId, today],
     );
     if (upcoming.rows[0].n > 0) return { bookings: 'kept existing' };
-    await createBooking(demoId, {
-      scheduleId: await scheduleId('12952', addDays(today, 5)),
-      classCode: '3A',
-      passengers: pax(['Aarav Sharma', 'Meera Sharma']),
-    });
+    await demoTrip();
     return { bookings: 'added an upcoming demo trip' };
   }
 
@@ -300,30 +151,14 @@ export async function seed() {
   let k = 0;
   for (let day = 1; day <= 7; day++) {
     for (const [train, cls] of routes) {
-      await createBooking(otherIds[k % otherIds.length], {
-        scheduleId: await scheduleId(train, addDays(today, day)),
-        classCode: cls,
-        passengers: pax(travellers.slice(k % 4, (k % 4) + 1 + (k % 3))),
-      });
+      await book(otherIds[k % otherIds.length], train, cls, day, travellers.slice(k % 4, (k % 4) + 1 + (k % 3)));
       k++;
     }
   }
 
-  await createBooking(demoId, {
-    scheduleId: await scheduleId('12952', addDays(today, 5)),
-    classCode: '3A',
-    passengers: pax(['Aarav Sharma', 'Meera Sharma']),
-  });
-  await createBooking(demoId, {
-    scheduleId: await scheduleId('12007', addDays(today, 12)),
-    classCode: 'CC',
-    passengers: pax(['Aarav Sharma']),
-  });
-  const cancelled = await createBooking(demoId, {
-    scheduleId: await scheduleId('12015', addDays(today, 8)),
-    classCode: 'EC',
-    passengers: pax(['Aarav Sharma']),
-  });
+  await demoTrip();
+  await book(demoId, '12007', 'CC', 12, ['Aarav Sharma']);
+  const cancelled = await book(demoId, '12015', 'EC', 8, ['Aarav Sharma']);
   await cancelBooking(demoId, cancelled.pnr);
   return { bookings: k + 3 };
 }
