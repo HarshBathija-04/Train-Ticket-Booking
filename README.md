@@ -1,90 +1,90 @@
 # RailDesk: Train Ticket Booking
 
-Search trains between Indian cities, pick your exact berth on a live coach map, and get a PNR in seconds, with booking that cannot oversell a seat.
+[![CI](https://github.com/HarshBathija-04/Train-Ticket-Booking/actions/workflows/ci.yml/badge.svg)](https://github.com/HarshBathija-04/Train-Ticket-Booking/actions/workflows/ci.yml)
 
-**Live demo:** [raildesk.vercel.app](https://raildesk.vercel.app) (frontend, Vercel) · [raildesk-api.onrender.com/health](https://raildesk-api.onrender.com/health) (API, Render)
-_Placeholder URLs: replace them after the first deploy._
+**Search Indian trains, pick your exact berth on a live coach map, and get a PNR in seconds, on a booking engine that cannot sell the same seat twice.**
 
-**Demo login:** `demo@raildesk.dev` / `Demo@1234` (the login page can also fill these in for you)
+| | |
+| --- | --- |
+| **Live demo** | `https://raildesk.vercel.app` _(placeholder: replace after the first Vercel deploy)_ |
+| **API health** | `https://raildesk-api.onrender.com/health` _(placeholder: replace after the first Render deploy)_ |
+| **Demo login** | `demo@raildesk.dev` / `Demo@1234` (the sign-in page can fill these in for you) |
 
-> The API runs on Render's free tier and sleeps when idle. The first request can take 30 to 60 seconds; the UI shows a "waking up the server" notice while that happens.
+> The API runs on Render's free tier and sleeps when idle. The first request can take 30 to 60 seconds; the UI shows a "waking up the server" banner while it does.
 
 ## Features
 
-- **Station autocomplete:** an accessible combobox (keyboard, screen reader) that searches 19 major stations by city, name or code.
-- **Train search:** 30 real-world routes (Rajdhani, Shatabdi, Vande Bharat, Mail/Express) with times, overnight arrival markers, duration, and fare and seats left for each class. A date strip lets you move between days.
-- **Class and seat selection:** coach maps for 1A, 2A, 3A, SL, CC and EC show berth types (LB/MB/UB/SL/SU, window/aisle). Booked seats refresh every 20 seconds.
-- **Passenger form:** up to 6 passengers per PNR, one per selected seat, with inline validation.
-- **Booking confirmation:** a printable ticket with a 10-digit PNR, a copy button, a passenger and berth chart, and the total fare (payment is simulated).
-- **My bookings:** upcoming and past/cancelled tabs. Cancelling an upcoming journey releases its seats immediately.
-- **Admin overview:** revenue, seats sold, and the latest bookings, shown only to users with the `ADMIN` role.
-- **Transaction-safe booking:** see [Overbooking protection](#overbooking-protection).
+- **Station autocomplete:** an accessible WAI-ARIA combobox over 19 major stations (city, name or code).
+- **Train search:** 30 real routes (Rajdhani, Shatabdi, Vande Bharat, Mail/Express) with overnight-arrival markers, per-class fares and live seats left, plus a date strip.
+- **Seat selection:** coach maps for 1A, 2A, 3A, SL, CC and EC with berth types (LB/MB/UB/SL/SU, window/aisle), refreshed every 20 seconds.
+- **Checkout:** up to 6 passengers per PNR, inline validation, simulated payment.
+- **Ticket:** printable e-ticket with a 10-digit PNR, copy button and berth chart.
+- **My bookings:** upcoming vs past/cancelled tabs; cancelling releases seats instantly.
+- **Admin overview:** revenue, seats sold and the latest bookings for `ADMIN` users.
 
 ## Screenshots
 
 | Search | Seat selection | Ticket |
 | --- | --- | --- |
-| ![Home](docs/screenshots/home-desktop.png) | ![Seat map](docs/screenshots/book-desktop.png) | ![Ticket](docs/screenshots/ticket-desktop.png) |
-| ![Results](docs/screenshots/search-desktop.png) | ![Mobile seat map](docs/screenshots/book-mobile.png) | ![My bookings](docs/screenshots/bookings-desktop.png) |
+| ![Home page with search form](docs/screenshots/home-desktop.png) | ![Coach seat map](docs/screenshots/book-desktop.png) | ![Printable ticket](docs/screenshots/ticket-desktop.png) |
+| ![Search results](docs/screenshots/search-desktop.png) | ![Seat map on mobile](docs/screenshots/book-mobile.png) | ![My bookings](docs/screenshots/bookings-desktop.png) |
 
 ## Architecture
 
 ```mermaid
 flowchart LR
   U[Browser] -->|HTTPS| V[Vercel<br/>Vite + React SPA]
-  U -->|"fetch /api/* (Bearer JWT)"| R[Render web service<br/>Express + TypeScript]
+  U -->|"fetch /api/* (Bearer JWT)"| R[Render web service<br/>Express 5 + TypeScript]
   R -->|"pg, search_path=train_booking"| P[(Render PostgreSQL<br/>shared DB, own schema)]
   GH[GitHub Actions<br/>keep-alive every 10 min] -->|GET /health| R
+  CI[GitHub Actions CI<br/>lint, test, build] -.->|Postgres service| T[(train_booking_test schema)]
 ```
 
-### Overbooking protection
+## Engineering highlights
 
-`POST /api/bookings` runs in a single transaction:
-
-1. `SELECT … FROM schedule_classes … FOR UPDATE` locks that train/date/class inventory row, so concurrent bookings of the same class are processed one after another.
-2. Requested seats are checked against the active passengers. Seats left blank are auto-assigned to the lowest free numbers.
-3. `available_seats` is decremented, then the booking and its passengers are inserted.
-
-Two constraints back this up in the schema: `CHECK (available_seats >= 0)`, and a partial unique index on `(schedule_class_id, seat_no) WHERE NOT cancelled`. Even a buggy code path cannot sell the same berth twice. The test suite fires 30 parallel requests at an 18-berth First AC coach and asserts that exactly 18 succeed.
-
-Trains run daily. Schedules and per-class inventory for a date are created on first search (`INSERT … ON CONFLICT DO NOTHING`), so the demo never runs out of future dates.
+- **Transaction-safe bookings.** `POST /api/bookings` locks the train/date/class inventory row with `SELECT ... FOR UPDATE`, assigns seats, decrements `available_seats` and inserts the booking in one transaction. A `CHECK (available_seats >= 0)` and a partial unique index on `(schedule_class_id, seat_no) WHERE NOT cancelled` back it up, so even a buggy code path cannot double-sell a berth. A test fires 30 parallel requests at an 18-berth coach and asserts exactly 18 succeed.
+- **Schema-per-app database.** Several portfolio apps share one free Render PostgreSQL instance. Each app sets `DB_SCHEMA`; the pool pins `search_path` to it and migrations create it, so tables never collide. The schema name is validated as a plain identifier because it is interpolated into SQL.
+- **Lazy daily schedules.** Trains run every day; a date's schedules and seat inventory are materialised on first search with `INSERT ... ON CONFLICT DO NOTHING`, so the demo never runs out of future dates.
+- **Idempotent boot.** Render runs `migrate && seed && start` on every deploy. Migrations are tracked in `schema_migrations`; the seed upserts and tops the demo account up with an upcoming trip as old ones drift into the past.
+- **Hardened API surface.** Zod validation on every input, Helmet headers, CORS allow-list, rate limits (stricter on auth), 20 KB body limit, HS256-pinned JWTs, and one JSON error shape (`{ "error": { "code", "message", "details" } }`). Other users' PNRs return 404, not 403, so they cannot be probed.
+- **Cold-start aware UI.** The API client flags requests slower than 3.5 s and the layout shows a "waking up the server" banner; a GitHub Actions cron pings `/health` (which also runs `SELECT 1`) to keep the free tier warm.
 
 ## Tech stack
 
 | Layer | Tech |
 | --- | --- |
 | Frontend | React 19, TypeScript, Vite 8, Tailwind CSS 4, TanStack Query, React Router 7, Sonner, Lucide |
-| Backend | Node 22+, Express 5, TypeScript, `pg`, Zod, Helmet, express-rate-limit, bcryptjs, JSON Web Tokens |
-| Database | PostgreSQL (plain SQL migrations + idempotent seed) |
-| Quality | Vitest + Supertest, ESLint, Prettier, GitHub Actions CI |
-| Hosting | Vercel (frontend), Render web service + Render PostgreSQL (API, DB) |
+| Backend | Node 22+, Express 5, TypeScript, `pg`, Zod, Helmet, express-rate-limit, bcryptjs, jsonwebtoken |
+| Database | PostgreSQL (plain SQL migrations, idempotent seed) |
+| Quality | Vitest, Supertest, ESLint, Prettier, GitHub Actions CI |
+| Hosting | Vercel (frontend), Render web service + shared Render PostgreSQL |
 
-## Local setup
+## Quick start
 
-Prerequisites: Node 22+ and a PostgreSQL database.
+Prerequisites: Node 22+ and a PostgreSQL database you can create a schema in.
 
 ```bash
-# 1. API
+# 1. API  ->  http://localhost:5130/health
 cd backend
-cp .env.example .env          # set DATABASE_URL and JWT_SECRET
+cp .env.example .env          # set DATABASE_URL (JWT_SECRET is optional locally)
 npm install
 npm run db:setup              # creates the schema, runs migrations, seeds demo data
-npm run dev                   # http://localhost:5130  (GET /health)
+npm run dev
 
-# 2. Frontend (new terminal)
+# 2. Frontend (second terminal)  ->  http://localhost:5215
 cd frontend
 cp .env.example .env          # VITE_API_URL=http://localhost:5130
 npm install
-npm run dev                   # http://localhost:5215
+npm run dev
 ```
 
-Quality checks (run in `backend/` and in `frontend/`):
+Sign in with the demo account above. Quality checks, run in both `backend/` and `frontend/`:
 
 ```bash
 npm run lint && npm test && npm run build
 ```
 
-Backend tests run against the database in `DATABASE_URL`, in a throwaway schema named `train_booking_test`.
+Backend tests use the database in `DATABASE_URL` but drop and recreate their own `train_booking_test` schema.
 
 ## Environment variables
 
@@ -106,6 +106,17 @@ Backend tests run against the database in `DATABASE_URL`, in a throwaway schema 
 | --- | --- | --- |
 | `VITE_API_URL` | yes (prod) | Base URL of the API, with no trailing slash, e.g. `https://raildesk-api.onrender.com` |
 
+## Deployment
+
+1. **Database (once, shared).** Create one free Render PostgreSQL instance for all portfolio apps. Copy its **Internal Database URL**.
+2. **API on Render.** Dashboard → **New → Blueprint** → pick this repo. `render.yaml` declares `raildesk-api` (rootDir `backend`, health check `/health`, `DB_SCHEMA=train_booking`, generated `JWT_SECRET`). When prompted, set:
+   - `DATABASE_URL`: the shared database's Internal Database URL
+   - `FRONTEND_URL`: your Vercel URL, e.g. `https://raildesk.vercel.app` (comma-separate extra origins)
+   - `ADMIN_PASSWORD` (optional): enables `admin@raildesk.dev`
+3. **Frontend on Vercel.** **Add New Project** → import this repo → **Root Directory** `frontend` (Vite preset) → add `VITE_API_URL=https://<your-service>.onrender.com` → Deploy. `vercel.json` adds SPA rewrites plus cache and security headers.
+4. **Keep-alive.** GitHub → **Settings → Secrets and variables → Actions → Variables** → add `BACKEND_URL=https://<your-service>.onrender.com`. The `Keep alive` workflow pings `/health` every 10 minutes and skips with a notice when the variable is unset.
+5. Replace the placeholder links at the top of this README.
+
 ## API
 
 | Method | Path | Auth | Description |
@@ -123,32 +134,6 @@ Backend tests run against the database in `DATABASE_URL`, in a throwaway schema 
 | GET | `/api/admin/overview` | admin | Stats and latest bookings |
 
 Errors always use the same shape: `{ "error": { "code": "SEAT_TAKEN", "message": "...", "details": [...] } }`.
-
-## Deployment
-
-### 1. Database (once, shared)
-
-Create a single **Render PostgreSQL** instance on the free plan (one per account, shared by all portfolio apps). This app keeps its tables in its own schema (`DB_SCHEMA=train_booking`), so nothing collides.
-
-### 2. API on Render
-
-1. Render dashboard → **New → Blueprint** → select this repository. `render.yaml` declares `raildesk-api` (rootDir `backend`, health check `/health`, free plan).
-2. When prompted, set:
-   - `DATABASE_URL`: the shared database's **Internal Database URL**
-   - `FRONTEND_URL`: your Vercel URL, e.g. `https://raildesk.vercel.app` (comma-separate extra origins such as preview URLs)
-   - `ADMIN_PASSWORD` (optional): enables the admin login
-   - `JWT_SECRET` is generated by Render.
-3. Every start runs `migrate` and `seed`, both idempotent, then starts the server.
-
-### 3. Frontend on Vercel
-
-1. Vercel → **Add New Project** → import this repository → set **Root Directory** to `frontend` (framework preset: Vite).
-2. Add the environment variable `VITE_API_URL=https://<your-render-service>.onrender.com`.
-3. Deploy. `vercel.json` adds SPA rewrites and cache/security headers.
-
-### 4. Keep-alive
-
-GitHub → repository **Settings → Secrets and variables → Actions → Variables** → add `BACKEND_URL=https://<your-render-service>.onrender.com`. The `Keep alive` workflow pings `/health` every 10 minutes, which also exercises the DB connection. If the variable is unset, the workflow skips with a notice.
 
 ## Project structure
 
@@ -176,9 +161,9 @@ GitHub → repository **Settings → Secrets and variables → Actions → Varia
 └── .github/workflows/       ci.yml, keep-alive.yml
 ```
 
-## History
+## Background
 
-This started as a Java Servlet/JSP college project (`BookTrainTickets/`) whose DAOs stored everything in in-memory lists, while a MySQL dump sat unused. It was rewritten as a typed JSON API plus a React SPA: Render has no native Java runtime, the servlets needed a Tomcat image and a build system the project never had, and almost every DAO would have needed rewriting anyway. The original data model (Users, Trains, Train_Schedules, Bookings) was ported to PostgreSQL and extended with stations, per-class inventory and passengers. The legacy code is still available in git history.
+RailDesk began as a Java Servlet/JSP college project whose DAOs kept everything in in-memory lists. It was rebuilt as a typed JSON API and a React SPA; the original data model (users, trains, schedules, bookings) was ported to PostgreSQL and extended with stations, per-class inventory and passengers. The legacy code lives in git history.
 
 ## License
 
