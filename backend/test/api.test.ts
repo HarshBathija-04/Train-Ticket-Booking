@@ -165,3 +165,16 @@ describe('admin', () => {
     expect((await request(app).get('/api/admin/overview').set(auth())).status).toBe(403);
   });
 });
+
+describe('errors', () => {
+  it('returns JSON errors for bad and oversized bodies', async () => {
+    const bad = await request(app).post('/api/auth/login').set('Content-Type', 'application/json').send('{"email":');
+    expect(bad.status).toBe(400);
+    expect(bad.body.error.code).toBe('BAD_JSON');
+    const big = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'a@b.co', password: 'x'.repeat(30_000) });
+    expect(big.status).toBe(413);
+    expect(big.body.error.code).toBe('BAD_REQUEST');
+  });
+});

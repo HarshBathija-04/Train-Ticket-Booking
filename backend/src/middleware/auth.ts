@@ -22,7 +22,7 @@ export const requireAuth: RequestHandler = (req, _res, next) => {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) return next(new HttpError(401, 'UNAUTHENTICATED', 'Please sign in'));
   try {
-    const payload = jwt.verify(header.slice(7), config.jwtSecret) as jwt.JwtPayload;
+    const payload = jwt.verify(header.slice(7), config.jwtSecret, { algorithms: ['HS256'] }) as jwt.JwtPayload;
     req.user = { id: Number(payload.sub), role: payload.role === 'ADMIN' ? 'ADMIN' : 'USER' };
     next();
   } catch {

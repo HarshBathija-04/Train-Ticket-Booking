@@ -23,7 +23,7 @@ export default function MyBookings() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:py-10">
-      <PageTitle title="My bookings">Your tickets, newest journeys first.</PageTitle>
+      <PageTitle title="My bookings">Your tickets, with the next journey first.</PageTitle>
 
       <div
         role="tablist"

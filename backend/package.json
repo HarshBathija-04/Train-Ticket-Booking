@@ -1,7 +1,7 @@
 {
   "name": "train-booking-api",
   "version": "1.0.0",
-  "description": "RailYatra train booking REST API (Express + PostgreSQL)",
+  "description": "RailDesk train booking REST API (Express + PostgreSQL)",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.build.json",

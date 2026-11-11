@@ -265,8 +265,25 @@ export async function seed() {
   const demoId = await upsertUser(DEMO_USER.name, DEMO_USER.email, DEMO_USER.password);
   if (config.adminPassword) await upsertUser('RailDesk Admin', 'admin@raildesk.dev', config.adminPassword, 'ADMIN');
 
+  const today = todayIST();
   const { rows } = await pool.query('SELECT count(*)::int AS n FROM bookings');
-  if (rows[0].n > 0) return { bookings: 'kept existing' };
+  if (rows[0].n > 0) {
+    // long-running demo: seeded trips drift into the past, so keep one upcoming trip for the demo account
+    const upcoming = await pool.query(
+      `SELECT count(*)::int AS n FROM bookings b
+       JOIN schedule_classes sc ON sc.id = b.schedule_class_id
+       JOIN train_schedules s ON s.id = sc.schedule_id
+       WHERE b.user_id = $1 AND b.booking_status = 'CONFIRMED' AND s.journey_date >= $2`,
+      [demoId, today],
+    );
+    if (upcoming.rows[0].n > 0) return { bookings: 'kept existing' };
+    await createBooking(demoId, {
+      scheduleId: await scheduleId('12952', addDays(today, 5)),
+      classCode: '3A',
+      passengers: pax(['Aarav Sharma', 'Meera Sharma']),
+    });
+    return { bookings: 'added an upcoming demo trip' };
+  }
 
   // Other travellers cannot sign in: their password is a random throwaway.
   const otherIds: number[] = [];
@@ -280,7 +297,6 @@ export async function seed() {
     ['12015', 'EC'],
     ['12904', 'SL'],
   ] as const;
-  const today = todayIST();
   let k = 0;
   for (let day = 1; day <= 7; day++) {
     for (const [train, cls] of routes) {
